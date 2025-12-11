@@ -142,13 +142,100 @@
 
         .sidebar-header h2 {
             font-size: 1.2rem;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
 
         .user-info {
             font-size: 0.75rem;
             opacity: 0.9;
             font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .key-display-section {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .key-item {
+            margin-bottom: 12px;
+        }
+
+        .key-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .key-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .key-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .key-text {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: #374151;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .key-copy-btn {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .key-copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .key-copy-btn:active {
+            transform: scale(0.95);
         }
 
         .sidebar-actions {
@@ -385,6 +472,31 @@
             margin-bottom: 20px;
         }
 
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         /* 响应式 */
         @media (max-width: 768px) {
             .sidebar {
@@ -440,8 +552,28 @@
         <!-- 侧边栏 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>📱 我的联系人</h2>
-                <div class="user-info" id="my-pubkey-display">加载中...</div>
+                <h2>💬 Nostr私聊</h2>
+                <div class="user-info">
+                    <span id="my-pubkey-display">加载中...</span>
+                </div>
+            </div>
+
+            <!-- 密钥显示区域 -->
+            <div class="key-display-section">
+                <div class="key-item">
+                    <div class="key-label">🔑 公钥 (Public Key)</div>
+                    <div class="key-value">
+                        <div class="key-text" id="display-pubkey">...</div>
+                        <button class="key-copy-btn" id="copy-pubkey-btn">📋 复制</button>
+                    </div>
+                </div>
+                <div class="key-item">
+                    <div class="key-label">🔐 私钥 (Private Key)</div>
+                    <div class="key-value">
+                        <div class="key-text" id="display-privkey">...</div>
+                        <button class="key-copy-btn" id="copy-privkey-btn">📋 复制</button>
+                    </div>
+                </div>
             </div>
 
             <div class="sidebar-actions">
@@ -498,6 +630,10 @@
         const loginBtn = document.getElementById('login-btn');
         const generateNewBtn = document.getElementById('generate-new-btn');
         const myPubkeyDisplay = document.getElementById('my-pubkey-display');
+        const displayPubkey = document.getElementById('display-pubkey');
+        const displayPrivkey = document.getElementById('display-privkey');
+        const copyPubkeyBtn = document.getElementById('copy-pubkey-btn');
+        const copyPrivkeyBtn = document.getElementById('copy-privkey-btn');
         const addContactBtn = document.getElementById('add-contact-btn');
         const contactsList = document.getElementById('contacts-list');
         const chatArea = document.getElementById('chat-area');
@@ -513,6 +649,36 @@
 
         function shortPubkey(pubkey) {
             return pubkey.substring(0, 8) + '...' + pubkey.substring(56);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+
+        async function copyToClipboard(text, label) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`✅ ${label}已复制到剪贴板`);
+            } catch (err) {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast(`✅ ${label}已复制到剪贴板`);
+            }
         }
 
         // ========== 登录相关 ==========
@@ -549,8 +715,13 @@
                 localStorage.setItem('nostr_privkey', bytesToHex(state.secretKey));
             }
 
-            // 显示公钥
-            myPubkeyDisplay.textContent = shortPubkey(bytesToHex(state.pubKey));
+            const hexPubkey = bytesToHex(state.pubKey);
+            const hexPrivkey = bytesToHex(state.secretKey);
+
+            // 显示密钥
+            myPubkeyDisplay.textContent = shortPubkey(hexPubkey);
+            displayPubkey.textContent = hexPubkey;
+            displayPrivkey.textContent = hexPrivkey;
 
             // 加载联系人
             loadContacts();
@@ -559,8 +730,19 @@
             loginScreen.style.display = 'none';
             chatScreen.style.display = 'flex';
 
-            console.log('✅ 登录成功！公钥:', bytesToHex(state.pubKey));
+            console.log('✅ 登录成功！');
+            console.log('公钥:', hexPubkey);
+            console.log('私钥:', hexPrivkey);
         }
+
+        // ========== 复制功能 ==========
+        copyPubkeyBtn.addEventListener('click', () => {
+            copyToClipboard(displayPubkey.textContent, '公钥');
+        });
+
+        copyPrivkeyBtn.addEventListener('click', () => {
+            copyToClipboard(displayPrivkey.textContent, '私钥');
+        });
 
         // ========== 联系人管理 ==========
         function loadContacts() {
