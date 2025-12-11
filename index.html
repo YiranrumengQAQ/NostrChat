@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nostr 去中心化聊天</title>
+    <title>Nostr私聊 - 去中心化聊天</title>
     <style>
         * {
             margin: 0;
@@ -13,30 +13,34 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f7fa;
+        }
+
+        /* ========== 登录界面 ========== */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 90%;
+            animation: slideUp 0.5s ease;
         }
 
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            animation: slideDown 0.5s ease;
-        }
-
-        @keyframes slideDown {
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -44,342 +48,431 @@
             }
         }
 
-        h1 {
+        .login-box h1 {
             color: #667eea;
-            font-size: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
             margin-bottom: 10px;
+            font-size: 2rem;
         }
 
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .connection-status {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .connected {
-            background: #10b981;
-            color: white;
-        }
-
-        .disconnected {
-            background: #ef4444;
-            color: white;
-        }
-
-        section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #374151;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .key-section {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .key-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .key-group label {
-            font-weight: 600;
+        .login-box p {
             color: #6b7280;
-            min-width: 100px;
+            margin-bottom: 30px;
         }
 
-        input[type="text"], textarea {
-            flex: 1;
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            width: 100%;
             padding: 12px 16px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 14px;
-            transition: all 0.3s;
             font-family: 'Courier New', monospace;
-            min-width: 250px;
+            transition: all 0.3s;
         }
 
-        input[type="text"]:focus, textarea:focus {
+        .input-group input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        textarea {
+        .btn {
             width: 100%;
-            min-height: 100px;
-            resize: vertical;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 14px;
             border: none;
-            padding: 12px 24px;
             border-radius: 10px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
             cursor: pointer;
             transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        button:hover:not(:disabled) {
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
-        button:active:not(:disabled) {
-            transform: translateY(0);
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
         }
 
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .btn-secondary:hover {
+            background: #e5e7eb;
         }
 
-        .compose-section textarea {
-            margin-bottom: 15px;
+        /* ========== 主聊天界面 ========== */
+        #chat-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: row;
         }
 
-        .button-group {
+        /* 侧边栏 */
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            flex-direction: column;
         }
 
-        #feed {
-            max-height: 500px;
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .user-info {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sidebar-actions {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .btn-small {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-small:hover {
+            background: #5568d3;
+        }
+
+        .contacts-list {
+            flex: 1;
             overflow-y: auto;
             padding: 10px;
         }
 
-        #feed::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #feed::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        .contact-item {
+            padding: 15px;
             border-radius: 10px;
-        }
-
-        #feed::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-
-        .note {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 15px;
+            margin-bottom: 5px;
+            cursor: pointer;
             transition: all 0.3s;
-            animation: slideIn 0.3s ease;
+            border: 2px solid transparent;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .contact-item:hover {
+            background: #f3f4f6;
         }
 
-        .note:hover {
+        .contact-item.active {
+            background: #eff6ff;
             border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
         }
 
-        .note-header {
+        .contact-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .contact-pubkey {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            font-family: 'Courier New', monospace;
+        }
+
+        .contact-preview {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f9fafb;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
         }
 
-        .note-author {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #667eea;
-            font-size: 0.85rem;
-        }
-
-        .note-time {
-            color: #9ca3af;
-            font-size: 0.8rem;
-        }
-
-        .note-content {
-            line-height: 1.8;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        .chat-title h3 {
             color: #1f2937;
+            font-size: 1.1rem;
         }
 
-        .loading {
-            text-align: center;
-            padding: 30px;
-            color: #6b7280;
-            font-style: italic;
+        .chat-pubkey {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            font-family: 'Courier New', monospace;
+            margin-top: 3px;
         }
 
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
+        .chat-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
 
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+        .status-connected {
+            background: #d1fae5;
+            color: #065f46;
         }
 
-        .info-box {
-            background: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: #1e40af;
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
         }
 
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 60%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            word-wrap: break-word;
+        }
+
+        .message.received .message-bubble {
+            background: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-text {
+            line-height: 1.5;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            transition: all 0.3s;
+        }
+
+        .input-wrapper textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        /* 响应式 */
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                z-index: 10;
+                height: 100%;
             }
 
-            h1 {
-                font-size: 1.5rem;
+            .sidebar.hidden {
+                display: none;
             }
 
-            section {
-                padding: 20px;
+            .chat-area.hidden {
+                display: none;
             }
+        }
 
-            .key-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
 
-            .key-group label {
-                min-width: auto;
-            }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 Nostr 去中心化聊天</h1>
-            <div class="status-bar">
-                <div class="connection-status disconnected" id="status">
-                    <span class="status-dot"></span>
-                    <span>未连接</span>
+    <!-- 登录界面 -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>💬 Nostr私聊</h1>
+            <p>去中心化端到端加密聊天</p>
+
+            <div class="input-group">
+                <label>私钥 (可选)</label>
+                <input type="text" id="login-privkey" placeholder="留空将自动生成新密钥">
+            </div>
+
+            <button class="btn btn-primary" id="login-btn">🚀 开始聊天</button>
+            <button class="btn btn-secondary" id="generate-new-btn">🔄 生成新密钥</button>
+        </div>
+    </div>
+
+    <!-- 聊天界面 -->
+    <div id="chat-screen">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>📱 我的联系人</h2>
+                <div class="user-info" id="my-pubkey-display">加载中...</div>
+            </div>
+
+            <div class="sidebar-actions">
+                <button class="btn-small" id="add-contact-btn">➕ 添加联系人</button>
+            </div>
+
+            <div class="contacts-list" id="contacts-list">
+                <!-- 联系人列表将动态填充 -->
+                <div class="empty-state" style="padding: 40px 20px;">
+                    <div style="font-size: 3rem;">👥</div>
+                    <p style="margin-top: 10px;">暂无联系人</p>
+                    <p style="font-size: 0.85rem; margin-top: 5px;">点击上方按钮添加</p>
                 </div>
-                <div style="font-size: 0.85rem; color: #6b7280;">
-                    已连接中继: <span id="relay-count">0</span>
-                </div>
             </div>
-        </header>
+        </div>
 
-        <section class="key-section">
-            <h2>🔑 您的身份</h2>
-            <div class="key-group">
-                <label>公钥:</label>
-                <input type="text" id="pubkey" readonly placeholder="点击生成密钥...">
+        <!-- 聊天区域 -->
+        <div class="chat-area" id="chat-area">
+            <div class="empty-state">
+                <div class="empty-state-icon">💭</div>
+                <p style="font-size: 1.1rem; font-weight: 600;">选择联系人开始聊天</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">端到端加密，安全私密</p>
             </div>
-            <div class="key-group">
-                <label>私钥:</label>
-                <input type="text" id="privkey" readonly placeholder="请妥善保管私钥!">
-            </div>
-            <div class="button-group">
-                <button id="generate-keys">🔄 生成新密钥</button>
-                <button id="import-keys">📥 导入私钥</button>
-            </div>
-            <div class="info-box">
-                💡 提示: 私钥是您的唯一身份凭证，请务必安全保存。丢失后无法恢复！
-            </div>
-        </section>
-
-        <section class="compose-section">
-            <h2>✍️ 发送消息</h2>
-            <textarea id="note-content" placeholder="在这里输入您想说的话..."></textarea>
-            <button id="publish-note">📤 发布消息</button>
-        </section>
-
-        <section class="feed-section">
-            <h2>📰 全球消息流</h2>
-            <div id="feed">
-                <div class="loading">加载中</div>
-            </div>
-        </section>
+        </div>
     </div>
 
     <script type="module">
-        // 使用nostr-tools库 (通过CDN引入)
-        import { SimplePool, finalizeEvent, generateSecretKey, getPublicKey } from 'https://esm.sh/nostr-tools@2.7.2';
+        // ========== 导入Nostr工具 ==========
+        import { SimplePool, finalizeEvent, generateSecretKey, getPublicKey, nip04 } from 'https://esm.sh/nostr-tools@2.7.2';
 
-        // Nostr公共中继服务器列表
+        // ========== 全局配置 ==========
         const RELAYS = [
             'wss://relay.damus.io',
             'wss://relay.nostr.band',
@@ -387,236 +480,215 @@
             'wss://relay.snort.social'
         ];
 
-        let pool = new SimplePool();
-        let secretKey = null;
-        let pubKey = null;
-        let subscription = null;
+        // ========== 全局状态 ==========
+        const state = {
+            pool: new SimplePool(),
+            secretKey: null,
+            pubKey: null,
+            contacts: [], // { pubkey, name, lastMessage, timestamp }
+            currentChat: null,
+            messages: {}, // { pubkey: [messages] }
+            subscriptions: {}
+        };
 
-        // DOM元素
-        const statusEl = document.getElementById('status');
-        const relayCountEl = document.getElementById('relay-count');
-        const pubkeyEl = document.getElementById('pubkey');
-        const privkeyEl = document.getElementById('privkey');
-        const generateKeysBtn = document.getElementById('generate-keys');
-        const importKeysBtn = document.getElementById('import-keys');
-        const noteContentEl = document.getElementById('note-content');
-        const publishNoteBtn = document.getElementById('publish-note');
-        const feedEl = document.getElementById('feed');
+        // ========== DOM元素 ==========
+        const loginScreen = document.getElementById('login-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const loginPrivkeyInput = document.getElementById('login-privkey');
+        const loginBtn = document.getElementById('login-btn');
+        const generateNewBtn = document.getElementById('generate-new-btn');
+        const myPubkeyDisplay = document.getElementById('my-pubkey-display');
+        const addContactBtn = document.getElementById('add-contact-btn');
+        const contactsList = document.getElementById('contacts-list');
+        const chatArea = document.getElementById('chat-area');
 
-        // 更新连接状态
-        function updateStatus(connected) {
-            if (connected) {
-                statusEl.className = 'connection-status connected';
-                statusEl.innerHTML = '<span class="status-dot"></span><span>已连接</span>';
-            } else {
-                statusEl.className = 'connection-status disconnected';
-                statusEl.innerHTML = '<span class="status-dot"></span><span>未连接</span>';
-            }
+        // ========== 工具函数 ==========
+        function bytesToHex(bytes) {
+            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // 生成新密钥
-        function generateKeys() {
-            secretKey = generateSecretKey();
-            pubKey = getPublicKey(secretKey);
-
-            // 转换为hex显示
-            const hexPubKey = Array.from(pubKey).map(b => b.toString(16).padStart(2, '0')).join('');
-            const hexPrivKey = Array.from(secretKey).map(b => b.toString(16).padStart(2, '0')).join('');
-
-            pubkeyEl.value = hexPubKey;
-            privkeyEl.value = hexPrivKey;
-
-            localStorage.setItem('nostr_privkey', hexPrivKey);
-
-            connectToRelays();
+        function hexToBytes(hex) {
+            return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
         }
 
-        // 导入私钥
-        function importKeys() {
-            const privKeyHex = prompt('请输入您的私钥 (64位hex格式):');
-            if (!privKeyHex || privKeyHex.length !== 64) {
-                alert('无效的私钥格式！');
-                return;
-            }
-
-            try {
-                // 从hex转换为Uint8Array
-                secretKey = new Uint8Array(privKeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-                pubKey = getPublicKey(secretKey);
-
-                const hexPubKey = Array.from(pubKey).map(b => b.toString(16).padStart(2, '0')).join('');
-
-                pubkeyEl.value = hexPubKey;
-                privkeyEl.value = privKeyHex;
-
-                localStorage.setItem('nostr_privkey', privKeyHex);
-
-                connectToRelays();
-            } catch (e) {
-                alert('导入失败: ' + e.message);
-            }
+        function shortPubkey(pubkey) {
+            return pubkey.substring(0, 8) + '...' + pubkey.substring(56);
         }
 
-        // 连接到中继服务器
-        async function connectToRelays() {
-            updateStatus(true);
-            relayCountEl.textContent = RELAYS.length;
+        // ========== 登录相关 ==========
+        loginBtn.addEventListener('click', login);
+        generateNewBtn.addEventListener('click', generateAndLogin);
 
-            // 订阅最新消息 (kind 1 = 文本消息)
-            subscribeToFeed();
+        function generateAndLogin() {
+            loginPrivkeyInput.value = '';
+            login();
         }
 
-        // 订阅消息流
-        function subscribeToFeed() {
-            feedEl.innerHTML = '<div class="loading">加载消息中</div>';
+        function login() {
+            const privkeyInput = loginPrivkeyInput.value.trim();
 
-            // 关闭旧订阅
-            if (subscription) {
-                subscription.close();
-            }
-
-            const now = Math.floor(Date.now() / 1000);
-            const oneHourAgo = now - 3600; // 获取最近1小时的消息
-
-            // 订阅消息
-            subscription = pool.subscribeMany(
-                RELAYS,
-                [
-                    {
-                        kinds: [1], // 文本消息
-                        limit: 50,
-                        since: oneHourAgo
-                    }
-                ],
-                {
-                    onevent(event) {
-                        displayNote(event);
-                    },
-                    oneose() {
-                        const loadingEl = feedEl.querySelector('.loading');
-                        if (loadingEl) {
-                            loadingEl.remove();
-                        }
-                    }
+            if (privkeyInput) {
+                // 导入私钥
+                if (privkeyInput.length !== 64) {
+                    alert('私钥格式错误！应为64位hex字符串');
+                    return;
                 }
-            );
+                try {
+                    state.secretKey = hexToBytes(privkeyInput);
+                    state.pubKey = getPublicKey(state.secretKey);
+                } catch (e) {
+                    alert('私钥无效：' + e.message);
+                    return;
+                }
+            } else {
+                // 生成新密钥
+                state.secretKey = generateSecretKey();
+                state.pubKey = getPublicKey(state.secretKey);
+
+                // 保存到localStorage
+                localStorage.setItem('nostr_privkey', bytesToHex(state.secretKey));
+            }
+
+            // 显示公钥
+            myPubkeyDisplay.textContent = shortPubkey(bytesToHex(state.pubKey));
+
+            // 加载联系人
+            loadContacts();
+
+            // 切换到聊天界面
+            loginScreen.style.display = 'none';
+            chatScreen.style.display = 'flex';
+
+            console.log('✅ 登录成功！公钥:', bytesToHex(state.pubKey));
         }
 
-        // 显示消息
-        function displayNote(event) {
-            const loadingEl = feedEl.querySelector('.loading');
-            if (loadingEl) {
-                loadingEl.remove();
+        // ========== 联系人管理 ==========
+        function loadContacts() {
+            const saved = localStorage.getItem('nostr_contacts');
+            if (saved) {
+                state.contacts = JSON.parse(saved);
+                renderContacts();
+            }
+        }
+
+        function saveContacts() {
+            localStorage.setItem('nostr_contacts', JSON.stringify(state.contacts));
+        }
+
+        addContactBtn.addEventListener('click', () => {
+            const pubkey = prompt('请输入联系人的Nostr公钥 (64位hex):');
+            if (!pubkey || pubkey.length !== 64) {
+                alert('公钥格式错误！');
+                return;
             }
 
             // 检查是否已存在
-            if (document.getElementById('note-' + event.id)) {
+            if (state.contacts.find(c => c.pubkey === pubkey)) {
+                alert('该联系人已存在！');
                 return;
             }
 
-            const noteEl = document.createElement('div');
-            noteEl.className = 'note';
-            noteEl.id = 'note-' + event.id;
+            const name = prompt('给联系人起个名字:', shortPubkey(pubkey)) || shortPubkey(pubkey);
 
-            const time = new Date(event.created_at * 1000);
-            const timeStr = time.toLocaleString('zh-CN', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+            state.contacts.push({
+                pubkey: pubkey,
+                name: name,
+                lastMessage: '',
+                timestamp: Date.now()
             });
 
-            const shortPubkey = event.pubkey.substring(0, 8) + '...' + event.pubkey.substring(56);
+            saveContacts();
+            renderContacts();
+        });
 
-            noteEl.innerHTML = `
-                <div class="note-header">
-                    <div class="note-author">${shortPubkey}</div>
-                    <div class="note-time">${timeStr}</div>
+        function renderContacts() {
+            if (state.contacts.length === 0) {
+                contactsList.innerHTML = `
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <div style="font-size: 3rem;">👥</div>
+                        <p style="margin-top: 10px;">暂无联系人</p>
+                        <p style="font-size: 0.85rem; margin-top: 5px;">点击上方按钮添加</p>
+                    </div>
+                `;
+                return;
+            }
+
+            contactsList.innerHTML = state.contacts.map(contact => `
+                <div class="contact-item" data-pubkey="${contact.pubkey}">
+                    <div class="contact-name">${contact.name}</div>
+                    <div class="contact-pubkey">${shortPubkey(contact.pubkey)}</div>
+                    ${contact.lastMessage ? `<div class="contact-preview">${contact.lastMessage}</div>` : ''}
                 </div>
-                <div class="note-content">${escapeHtml(event.content)}</div>
+            `).join('');
+
+            // 添加点击事件
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    openChat(item.dataset.pubkey);
+                });
+            });
+        }
+
+        // ========== 聊天功能 (待实现) ==========
+        function openChat(pubkey) {
+            state.currentChat = pubkey;
+            const contact = state.contacts.find(c => c.pubkey === pubkey);
+
+            // 更新样式
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.pubkey === pubkey) {
+                    item.classList.add('active');
+                }
+            });
+
+            // 渲染聊天界面
+            chatArea.innerHTML = `
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <h3>${contact.name}</h3>
+                        <div class="chat-pubkey">${shortPubkey(pubkey)}</div>
+                    </div>
+                    <div class="chat-status status-connected">已连接</div>
+                </div>
+
+                <div class="messages-container" id="messages-container">
+                    <!-- 消息区域 - 待实现 -->
+                    <div class="empty-state">
+                        <div style="font-size: 2rem;">🔐</div>
+                        <p style="margin-top: 10px;">端到端加密聊天</p>
+                        <p style="font-size: 0.85rem; margin-top: 5px;">开始发送消息吧</p>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea id="message-input" placeholder="输入消息..." rows="1"></textarea>
+                        <button class="send-btn" id="send-btn">发送</button>
+                    </div>
+                </div>
             `;
 
-            // 插入到顶部
-            feedEl.insertBefore(noteEl, feedEl.firstChild);
+            // TODO: 加载历史消息
+            // TODO: 订阅新消息
+            // TODO: 实现发送功能
 
-            // 限制显示数量
-            const notes = feedEl.querySelectorAll('.note');
-            if (notes.length > 50) {
-                notes[notes.length - 1].remove();
-            }
+            console.log('📱 打开聊天:', contact.name, pubkey);
         }
 
-        // 转义HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // ========== 初始化 ==========
+        // 尝试从localStorage加载密钥
+        const savedPrivkey = localStorage.getItem('nostr_privkey');
+        if (savedPrivkey) {
+            loginPrivkeyInput.value = savedPrivkey;
         }
 
-        // 发布消息
-        async function publishNote() {
-            if (!secretKey) {
-                alert('请先生成或导入密钥！');
-                return;
-            }
-
-            const content = noteContentEl.value.trim();
-            if (!content) {
-                alert('请输入消息内容！');
-                return;
-            }
-
-            publishNoteBtn.disabled = true;
-            publishNoteBtn.textContent = '⏳ 发送中...';
-
-            try {
-                const eventTemplate = {
-                    kind: 1,
-                    created_at: Math.floor(Date.now() / 1000),
-                    tags: [],
-                    content: content
-                };
-
-                const signedEvent = finalizeEvent(eventTemplate, secretKey);
-
-                await Promise.any(pool.publish(RELAYS, signedEvent));
-
-                noteContentEl.value = '';
-                alert('✅ 消息发布成功！');
-
-                // 立即显示自己的消息
-                displayNote(signedEvent);
-
-            } catch (e) {
-                alert('❌ 发布失败: ' + e.message);
-            } finally {
-                publishNoteBtn.disabled = false;
-                publishNoteBtn.textContent = '📤 发布消息';
-            }
-        }
-
-        // 事件监听
-        generateKeysBtn.addEventListener('click', generateKeys);
-        importKeysBtn.addEventListener('click', importKeys);
-        publishNoteBtn.addEventListener('click', publishNote);
-
-        // 初始化：尝试从localStorage加载密钥
-        const savedPrivKey = localStorage.getItem('nostr_privkey');
-        if (savedPrivKey && savedPrivKey.length === 64) {
-            try {
-                secretKey = new Uint8Array(savedPrivKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-                pubKey = getPublicKey(secretKey);
-
-                const hexPubKey = Array.from(pubKey).map(b => b.toString(16).padStart(2, '0')).join('');
-
-                pubkeyEl.value = hexPubKey;
-                privkeyEl.value = savedPrivKey;
-
-                connectToRelays();
-            } catch (e) {
-                console.error('加载保存的密钥失败:', e);
-            }
-        }
+        console.log('🚀 Nostr聊天客户端已加载');
+        console.log('📝 后续需要实现：');
+        console.log('   1. 加密私信发送 (NIP-04)');
+        console.log('   2. 消息接收和解密');
+        console.log('   3. 消息历史记录加载');
+        console.log('   4. 实时消息订阅');
     </script>
 </body>
 </html>
