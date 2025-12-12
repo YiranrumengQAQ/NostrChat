@@ -53,7 +53,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: var(--text-dark);
-            overflow: auto;
+            overflow: hidden;
             height: 100vh;
         }
 
@@ -1272,8 +1272,14 @@
             }
 
             .input-area {
-                padding: 0.85rem;
-                padding-bottom: calc(2rem + var(--safe-area-bottom));
+                padding: 0.85rem 0.5rem;
+                padding-bottom: calc(1.5rem + var(--safe-area-bottom));
+            }
+
+            .send-btn {
+                width: 42px;
+                height: 42px;
+                margin-right: 0.3rem;
             }
 
             .sidebar {
@@ -1622,6 +1628,8 @@
         window.pk = null;
         window.currentChannel = 'global';
         window.messages = [];
+        window.dmMessages = {}; // 存储私聊消息，格式: {pubkey: [messages]}
+        window.currentDM = null; // 当前私聊对象的pubkey
         window.subscriptions = {};
         window.userProfiles = {};
         window.replyToMessage = null;
