@@ -1290,7 +1290,6 @@
                 font-size: 0.95rem;
                 flex-shrink: 0;
                 min-width: 38px;
-                margin-right: 0;
             }
 
             .input-icon-btn {
@@ -1713,6 +1712,7 @@
 
             connectToRelays();
             subscribeToGlobal();
+            subscribeToDMs();
             measureLatency();
             loadUserProfile();
             setupChannelClickHandlers();
@@ -1764,7 +1764,7 @@
         }
 
 
-        // ========== 私聊功能 ==========
+        // ==================== 私聊功能 ====================
         function subscribeToDMs() {
             if (!window.pk) return;
             const pubkeyHex = typeof window.pk === 'string' ? window.pk : nip19.decode(localStorage.getItem('nostr:pk')).data;
@@ -1791,7 +1791,7 @@
         function updateDMList() {
             const dmsSection = document.getElementById('dmsSection');
             if (Object.keys(window.dmMessages).length === 0) {
-                dmsSection.innerHTML = '<div class="section-title">私聊</div><div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">暂无私聊消息<br/>点击下方按钮添加联系人</div></div>';
+                dmsSection.innerHTML = '<div class="section-title">私聊</div><div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">暂无私聊消息<br/>点击下方添加联系人</div></div>';
                 return;
             }
             let html = '<div class="section-title">私聊列表</div>';
@@ -2122,30 +2122,33 @@
             if (!content) return;
 
             try {
-                const tags = [];
-                if (window.replyToMessage) {
-                    tags.push(['e', window.replyToMessage, '', 'reply']);
-                    window.replyToMessage = null;
-                }
-
                 let event;
-                if (window.nostr && localStorage.getItem('nostr_nip07')) {
-                    event = await window.nostr.signEvent({
-                        kind: 1,
-                        created_at: Math.floor(Date.now() / 1000),
-                        tags,
-                        content
-                    });
+                // 判断是私聊还是频道消息
+                if (window.currentDM) {
+                    // 私聊消息
+                    const tags = [['p', window.currentDM]];
+                    if (window.nostr && localStorage.getItem('nostr:nip07')) {
+                        const encrypted = await window.nostr.nip04.encrypt(window.currentDM, content);
+                        event = await window.nostr.signEvent({ kind: 4, created_at: Math.floor(Date.now() / 1000), tags, content: encrypted });
+                    } else {
+                        event = finalizeEvent({ kind: 4, created_at: Math.floor(Date.now() / 1000), tags, content }, window.sk);
+                    }
+                    await window.pool.publish(window.relays, event);
+                    handleDMMessage(event);
                 } else {
-                    event = finalizeEvent({
-                        kind: 1,
-                        created_at: Math.floor(Date.now() / 1000),
-                        tags,
-                        content
-                    }, window.sk);
+                    // 频道消息
+                    const tags = [];
+                    if (window.replyToMessage) {
+                        tags.push(['e', window.replyToMessage, '', 'reply']);
+                        window.replyToMessage = null;
+                    }
+                    if (window.nostr && localStorage.getItem('nostr:nip07')) {
+                        event = await window.nostr.signEvent({ kind: 1, created_at: Math.floor(Date.now() / 1000), tags, content });
+                    } else {
+                        event = finalizeEvent({ kind: 1, created_at: Math.floor(Date.now() / 1000), tags, content }, window.sk);
+                    }
+                    await window.pool.publish(window.relays, event);
                 }
-
-                await window.pool.publish(window.relays, event);
                 input.value = '';
                 input.style.height = 'auto';
                 document.getElementById('sendBtn').disabled = true;
@@ -2264,21 +2267,26 @@
         window.switchChannel = (channelId, element) => {
             console.log('Switching to channel:', channelId);
             window.currentChannel = channelId;
+            window.currentDM = null; // 清除私聊状态
+
             document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
             if (element) element.classList.add('active');
 
             window.messages = [];
             const container = document.getElementById('messagesContainer');
-            container.innerHTML = '<div class="loading"><div class="spinner"></div><div>正在加载消息...</div></div>';
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><div>正在从 Nostr 中继加载消息...</div></div>';
+
+            // 更新聊天头部信息
+            document.getElementById('chatTitle').textContent = '全球聊天';
+            document.getElementById('chatAvatar').textContent = '🌍';
+            document.getElementById('chatAvatar').parentElement.querySelector('.chat-status').innerHTML = '<div class="online-count"><span>👥</span><span id="memberCount">0</span><span>条消息</span></div>';
 
             subscribeToGlobal();
 
             const badge = element?.querySelector('.channel-badge');
             if (badge) badge.style.display = 'none';
 
-            if (window.innerWidth <= 968) {
-                closeSidebar();
-            }
+            if (window.innerWidth <= 968) closeSidebar();
         };
 
         window.openCreateChannel = () => {
@@ -2443,15 +2451,25 @@
         };
 
         window.switchTab = (tab) => {
+            // 切换标签样式
             document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
 
+            // 显示/隐藏对应区域
             document.getElementById('channelsSection').style.display = tab === 'channels' ? 'block' : 'none';
             document.getElementById('dmsSection').style.display = tab === 'dms' ? 'block' : 'none';
             document.getElementById('usersSection').style.display = tab === 'users' ? 'block' : 'none';
 
+            // 显示/隐藏底部按钮
             document.getElementById('createChannelBtn').style.display = tab === 'channels' ? 'flex' : 'none';
             document.getElementById('addContactBtn').style.display = tab === 'dms' ? 'flex' : 'none';
+
+            // 如果切换到私聊标签，更新私聊列表（但不切换聊天区域）
+            if (tab === 'dms') {
+                updateDMList();
+            }
+
+            // 重要：不自动切换聊天区域到频道，保持当前聊天状态
         };
 
         window.openSettings = () => {
