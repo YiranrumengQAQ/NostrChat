@@ -1272,30 +1272,31 @@
             }
 
             .input-area {
-                padding: 0.65rem 0.5rem;
-                padding-bottom: calc(1rem + var(--safe-area-bottom));
+                padding: 0.5rem 0.3rem;
+                padding-bottom: calc(0.8rem + var(--safe-area-bottom));
             }
 
             .input-wrapper {
-                gap: 0.4rem;
+                gap: 0.3rem;
             }
 
             .input-box {
-                padding: 0.6rem 0.7rem;
+                padding: 0.5rem 0.6rem;
             }
 
             .send-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
+                width: 38px;
+                height: 38px;
+                font-size: 0.95rem;
                 flex-shrink: 0;
-                min-width: 40px;
+                min-width: 38px;
+                margin-right: 0;
             }
 
             .input-icon-btn {
-                min-width: 28px;
-                min-height: 28px;
-                font-size: 1rem;
+                min-width: 26px;
+                min-height: 26px;
+                font-size: 0.95rem;
             }
 
             .sidebar {
@@ -1644,8 +1645,8 @@
         window.pk = null;
         window.currentChannel = 'global';
         window.messages = [];
-        window.dmMessages = {}; // 私聊消息存储
-        window.currentDM = null; // 当前私聊对象
+        window.dmMessages = {};
+        window.currentDM = null;
         window.subscriptions = {};
         window.userProfiles = {};
         window.replyToMessage = null;
@@ -1763,8 +1764,7 @@
         }
 
 
-
-        // 订阅私聊消息
+        // ========== 私聊功能 ==========
         function subscribeToDMs() {
             if (!window.pk) return;
             const pubkeyHex = typeof window.pk === 'string' ? window.pk : nip19.decode(localStorage.getItem('nostr:pk')).data;
@@ -1776,7 +1776,6 @@
             window.subscriptions['dms'] = sub;
         }
 
-        // 处理私聊消息
         async function handleDMMessage(event) {
             const pubkeyHex = typeof window.pk === 'string' ? window.pk : nip19.decode(localStorage.getItem('nostr:pk')).data;
             const otherPubkey = event.pubkey === pubkeyHex ? event.tags.find(t => t[0] === 'p')?.[1] : event.pubkey;
@@ -1789,37 +1788,34 @@
             fetchUserProfile(otherPubkey);
         }
 
-        // 更新私聊列表
         function updateDMList() {
             const dmsSection = document.getElementById('dmsSection');
             if (Object.keys(window.dmMessages).length === 0) {
-                dmsSection.innerHTML = '<div class="section-title">私聊</div><div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">暂无私聊消息</div></div>';
+                dmsSection.innerHTML = '<div class="section-title">私聊</div><div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">暂无私聊消息<br/>点击下方按钮添加联系人</div></div>';
                 return;
             }
-            let html = '<div class="section-title">私聊</div>';
-            Object.entries(window.dmMessages).forEach(([pubkey, messages]) => {
-                const lastMsg = messages[messages.length - 1];
+            let html = '<div class="section-title">私聊列表</div>';
+            Object.entries(window.dmMessages).forEach(([pubkey, msgs]) => {
+                const lastMsg = msgs[msgs.length - 1];
                 const profile = window.userProfiles[pubkey] || {};
                 const name = profile.name || pubkey.slice(0, 8);
                 const time = new Date(lastMsg.created_at * 1000).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                const unread = messages.filter(m => !m.read).length;
-                html += `<div class="channel-item ${window.currentDM === pubkey ? 'active' : ''}" data-contact="${pubkey}" onclick="openDirectMessage('${pubkey}')"><div class="channel-info"><div class="channel-icon">👤</div><div class="channel-details"><div class="channel-name">${escapeHtml(name)}</div><div class="channel-preview">私聊消息</div></div></div><div class="channel-meta"><div class="channel-time">${time}</div>${unread > 0 ? `<div class="channel-badge">${unread}</div>` : ''}</div></div>`;
+                const unread = msgs.filter(m => !m.read).length;
+                html += `<div class="channel-item ${window.currentDM === pubkey ? 'active' : ''}" data-contact="${pubkey}" onclick="openDirectMessage('${pubkey}')"><div class="channel-info"><div class="channel-icon">👤</div><div class="channel-details"><div class="channel-name">${escapeHtml(name)}</div><div class="channel-preview">加密私聊</div></div></div><div class="channel-meta"><div class="channel-time">${time}</div>${unread > 0 ? `<div class="channel-badge">${unread}</div>` : ''}</div></div>`;
             });
             dmsSection.innerHTML = html;
         }
 
-        // 渲染私聊消息
         async function renderDMMessages(pubkey) {
             const container = document.getElementById('messagesContainer');
-            const messages = window.dmMessages[pubkey] || [];
-            if (messages.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">开始你的私聊</div></div>';
+            const msgs = window.dmMessages[pubkey] || [];
+            if (msgs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">开始你的加密私聊</div></div>';
                 return;
             }
             const pubkeyHex = typeof window.pk === 'string' ? window.pk : nip19.decode(localStorage.getItem('nostr:pk')).data;
-            let html = '';
-            let currentDate = '';
-            for (const msg of messages) {
+            let html = '', currentDate = '';
+            for (const msg of msgs) {
                 const msgDate = new Date(msg.created_at * 1000);
                 const dateStr = msgDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
                 if (dateStr !== currentDate) {
@@ -1828,11 +1824,11 @@
                 }
                 const isOwn = msg.pubkey === pubkeyHex;
                 const time = msgDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                let content = msg.content;
+                const content = msg.content;
                 const profile = window.userProfiles[isOwn ? pubkeyHex : pubkey] || {};
                 const name = profile.name || (isOwn ? '我' : pubkey.slice(0, 8));
                 const avatar = name[0].toUpperCase();
-                html += `<div class="message ${isOwn ? 'own' : ''}" data-id="${msg.id}">${!isOwn ? `<div class="message-avatar">${avatar}</div>` : ''}<div class="message-content">${!isOwn ? `<div class="message-header"><span class="message-author">${escapeHtml(name)}</span><span class="message-time">${time}</span></div>` : ''}<div class="message-bubble">${escapeHtml(content)}</div>${isOwn ? `<div class="message-time" style="text-align: right; margin-top: 0.2rem;">${time}</div>` : ''}</div>${isOwn ? `<div class="message-avatar">${avatar}</div>` : ''}</div>`;
+                html += `<div class="message ${isOwn ? 'own' : ''}" data-id="${msg.id}">${!isOwn ? `<div class="message-avatar">${avatar}</div>` : ''}<div class="message-content">${!isOwn ? `<div class="message-header"><span class="message-author">${escapeHtml(name)}</span><span class="message-time">${time}</span></div>` : ''}<div class="message-bubble">${escapeHtml(content)}</div>${isOwn ? `<div class="message-time" style="text-align:right;margin-top:0.2rem">${time}</div>` : ''}</div>${isOwn ? `<div class="message-avatar">${avatar}</div>` : ''}</div>`;
             }
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
@@ -1850,8 +1846,7 @@
 
             const container = document.getElementById('messagesContainer');
             if (!container.querySelector('.loading')) {
-                // 只添加单条新消息，不重新渲染整个列表
-                renderSingleMessage(event);
+                renderMessages();
             }
 
             fetchUserProfile(event.pubkey);
@@ -2411,10 +2406,21 @@
         };
 
         window.openDirectMessage = (pubkey) => {
-            showToast('私聊功能开发中', 'info');
-            if (window.innerWidth <= 968) {
-                closeSidebar();
+            window.currentDM = pubkey;
+            window.currentChannel = null;
+            document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-contact="${pubkey}"]`)?.classList.add('active');
+            const profile = window.userProfiles[pubkey] || {};
+            const name = profile.name || pubkey.slice(0, 8);
+            document.getElementById('chatTitle').textContent = name;
+            document.getElementById('chatAvatar').textContent = name[0].toUpperCase();
+            document.getElementById('chatAvatar').parentElement.querySelector('.chat-status').innerHTML = '<span style="color:var(--text-gray)">🔒 加密私聊</span>';
+            renderDMMessages(pubkey);
+            if (window.dmMessages[pubkey]) {
+                window.dmMessages[pubkey].forEach(m => m.read = true);
+                updateDMList();
             }
+            if (window.innerWidth <= 968) closeSidebar();
         };
 
         window.toggleSidebar = () => {
